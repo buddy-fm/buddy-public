@@ -96,15 +96,6 @@
     return originalOpen.apply(this, [url, ...args]);
   };
   
-  // Function to intercept location changes
-  const originalAssign = window.location.assign;
-  window.location.assign = function(url) {
-    if (isStripeBuyLink(url)) {
-      url = addClientRefToUrl(url);
-    }
-    return originalAssign.call(this, url);
-  };
-  
   // Run when DOM is ready
   function init() {
     processStripeLinks();
