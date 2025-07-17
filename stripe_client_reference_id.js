@@ -7,8 +7,11 @@
   
   // Only proceed if client_reference_id exists
   if (!clientRefId) {
+    console.log('No client_reference_id found in URL');
     return;
   }
+  
+  console.log('Found client_reference_id:', clientRefId);
   
   // Function to check if URL is a Stripe buy link
   function isStripeBuyLink(url) {
@@ -34,16 +37,21 @@
   
   // Function to process all Stripe links
   function processStripeLinks() {
+    console.log('Processing Stripe links...');
     
     // Handle anchor tags
     const allLinks = document.querySelectorAll('a');
+    console.log('Found', allLinks.length, 'total links');
     
     allLinks.forEach(link => {
       const href = link.getAttribute('href');
+      console.log('Checking link:', href);
       
       if (isStripeBuyLink(href)) {
+        console.log('Found Stripe link:', href);
         const newHref = addClientRefToUrl(href);
         link.href = newHref;
+        console.log('Updated to:', newHref);
       }
     });
     
@@ -103,8 +111,9 @@
     return originalOpen.apply(this, [url, ...args]);
   };
   
-  // Run when DOM is ready
+  // Main initialization function
   function init() {
+    console.log('Initializing Stripe client reference script...');
     processStripeLinks();
     
     // Add click event listener to catch dynamic elements
@@ -124,7 +133,7 @@
         }
       });
       
-      observer.observe(document.body, {
+      observer.observe(document.body || document.documentElement, {
         childList: true,
         subtree: true,
         attributes: true,
@@ -133,21 +142,34 @@
     }
   }
   
-  // Initialize when DOM is ready
-  function tryInit() {
-    if (document.body) {
-      init();
-    } else {
-      setTimeout(tryInit, 10);
-    }
-  }
-  
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', tryInit);
+  // Run immediately if possible
+  if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    console.log('DOM already ready, running immediately');
+    init();
   } else {
-    tryInit();
+    console.log('DOM not ready, waiting...');
+    document.addEventListener('DOMContentLoaded', init);
   }
   
-  // Also try after window load as a fallback
-  window.addEventListener('load', init);
+  // Also run after window load as a backup
+  window.addEventListener('load', function() {
+    console.log('Window loaded, running backup init');
+    init();
+  });
+  
+  // Run every 500ms for the first 3 seconds as ultimate fallback
+  let attempts = 0;
+  const maxAttempts = 6;
+  const fallbackInterval = setInterval(function() {
+    attempts++;
+    console.log('Fallback attempt', attempts);
+    
+    if (document.body && document.querySelectorAll('a').length > 0) {
+      init();
+      clearInterval(fallbackInterval);
+    } else if (attempts >= maxAttempts) {
+      clearInterval(fallbackInterval);
+    }
+  }, 500);
+  
 })();
