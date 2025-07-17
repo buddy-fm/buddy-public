@@ -6,7 +6,9 @@
   const clientRefId = urlParams.get('client_reference_id');
   
   // Only proceed if client_reference_id exists
-  if (!clientRefId) return;
+  if (!clientRefId) {
+    return;
+  }
   
   // Function to check if URL is a Stripe buy link
   function isStripeBuyLink(url) {
@@ -32,11 +34,16 @@
   
   // Function to process all Stripe links
   function processStripeLinks() {
+    
     // Handle anchor tags
-    document.querySelectorAll('a').forEach(link => {
+    const allLinks = document.querySelectorAll('a');
+    
+    allLinks.forEach(link => {
       const href = link.getAttribute('href');
+      
       if (isStripeBuyLink(href)) {
-        link.href = addClientRefToUrl(href);
+        const newHref = addClientRefToUrl(href);
+        link.href = newHref;
       }
     });
     
@@ -127,9 +134,20 @@
   }
   
   // Initialize when DOM is ready
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
+  function tryInit() {
+    if (document.body) {
+      init();
+    } else {
+      setTimeout(tryInit, 10);
+    }
   }
+  
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', tryInit);
+  } else {
+    tryInit();
+  }
+  
+  // Also try after window load as a fallback
+  window.addEventListener('load', init);
 })();
